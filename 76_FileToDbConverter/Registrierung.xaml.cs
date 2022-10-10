@@ -1,78 +1,66 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
+﻿using System.Linq;
 using System.Security.Cryptography;
-using MahApps.Metro.Controls;
+using System.Windows;
 
-namespace _76_FileToDbConverter
+namespace _76_FileToDbConverter;
+
+public partial class Registrierung
 {
-    public partial class Registrierung
+    private readonly AppContext context = new();
+
+
+
+    public Registrierung()
     {
-        private readonly AppContext context = new AppContext();
+        InitializeComponent();
+        context.Database.EnsureCreated();
+    }
 
+    private void BtnSpeichern(object sender, RoutedEventArgs e)
+    {
+        var hash256 = new Hash256();
 
-        public Registrierung()
+        var existingUser = context.Users.Any(x => x.Username == TxtUsername.Text);
+
+        if (existingUser)
         {
-            InitializeComponent();
-
+            MessageBox.Show("Dieser Benutzer existiert bereits. Bitte geben Sie einen anderen Benutzernamen ein.");
+            TxtUsername.Clear();
+            TxtPassword.Clear();
+            TxtPasswordConfirm.Clear();
         }
-
-        private void BtnSpeichern(object sender, RoutedEventArgs e)
+        else
         {
-            Hash256 hash256 = new Hash256();
-
-            var existingUser = context.Users.Any(x => x.Username == TxtUsername.Text);
-
-            if (existingUser)
+            if (TxtPassword.Password == TxtPasswordConfirm.Password)
             {
-                MessageBox.Show("Dieser Benutzer existiert bereits. Bitte geben Sie einen anderen Benutzernamen ein.");
-                TxtUsername.Clear();
-                TxtPassword.Clear();
-                TxtPasswordConfirm.Clear();
+                var userPassword = TxtPasswordConfirm.Password;
+                using (var sha256 = SHA256.Create())
+                {
+                    var newPassword = hash256.GetHash(sha256, userPassword);
+
+                    context.Users.Add(new User
+                    {
+                        Username = TxtUsername.Text,
+                        Password = newPassword
+                    });
+                    context.SaveChanges();
+                }
+
+                MessageBox.Show("Ihr Benutzer wurde erfolgreich angelegt.");
+                Close();
             }
             else
             {
-                if (TxtPassword.Password == TxtPasswordConfirm.Password)
-                {
-                    string userPassword = TxtPasswordConfirm.Password;
-                    using (SHA256 sha256 = SHA256.Create())
-                    {
-                        string newPassword = hash256.GetHash(sha256, userPassword);
-
-                        context.Users.Add(new User
-                        {
-                            Username = TxtUsername.Text,
-                            Password = newPassword
-                        });
-                        context.SaveChanges();
-                    }
-
-                    MessageBox.Show("Ihr Benutzer wurde erfolgreich angelegt.");
-                    Close();
-                }
-                else
-                {
-                    MessageBox.Show(
-                        "Das eingegebene Passwort stimmt nich überein. Bitte geben Sie Ihre Eingabe noch einmal ein.");
-                    TxtPassword.Clear();
-                    TxtPasswordConfirm.Clear();
-                }
+                MessageBox.Show(
+                    "Das eingegebene Passwort stimmt nich überein. Bitte geben Sie Ihre Eingabe noch einmal ein.");
+                TxtPassword.Clear();
+                TxtPasswordConfirm.Clear();
             }
         }
+    }
 
-        private void BtnAbbrechen(object sender, RoutedEventArgs e)
-        {
-            Close();
-        }
+    private void BtnAbbrechen(object sender, RoutedEventArgs e)
+    {
+        Close();
     }
 }

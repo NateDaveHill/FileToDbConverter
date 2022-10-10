@@ -47,6 +47,7 @@ namespace _76_FileToDbConverter
         private void BtnImport(object sender, RoutedEventArgs e)
         {
             using AppContext context = new AppContext();
+            context.Database.EnsureCreated();
 
 
             if (String.IsNullOrEmpty(txtBox.Text))
